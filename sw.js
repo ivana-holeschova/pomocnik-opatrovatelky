@@ -1,6 +1,6 @@
 // Uloží appku do telefónu, aby fungovala aj bez internetu.
 // Pri každej zmene appky zvýšte číslo verzie (v1 -> v2), aby sa telefóny aktualizovali.
-const CACHE = 'pomocnik-v1';
+const CACHE = 'pomocnik-v2';
 const FILES = ['./', 'index.html', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Pomocník opatrovateľky</title>
-<meta name="description" content="Jednoduchá dochádzka a prehľad hodín pre opatrovateľky. Údaje zostávajú len v telefóne.">
+<meta name="description" content="Dochádzka, presuny a karty klientov pre opatrovateľky. Údaje zostávajú len v telefóne, zamknuté PIN kódom.">
 <meta name="theme-color" content="#2f7d6d">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -24,30 +24,36 @@
 html,body{margin:0}
 body{background:var(--bg);color:var(--text);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
      padding-bottom:calc(76px + env(safe-area-inset-bottom))}
-header{background:var(--accent);color:#fff;padding:14px 16px calc(14px) ;padding-top:calc(14px + env(safe-area-inset-top))}
+header{background:var(--accent);color:#fff;padding:14px 16px;padding-top:calc(14px + env(safe-area-inset-top));
+       display:flex;justify-content:space-between;align-items:center;gap:10px}
 header h1{margin:0;font-size:19px;font-weight:650}
 header p{margin:2px 0 0;font-size:13px;opacity:.85}
+#zamknutBtn{background:rgba(255,255,255,.18);color:#fff;padding:8px 10px;font-size:18px}
 main{max-width:640px;margin:0 auto;padding:12px 16px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
 h2{font-size:16px;margin:0 0 10px}
 label{display:block;font-size:13px;color:var(--muted);margin:8px 0 4px}
 input,select,textarea{width:100%;font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);
   border-radius:10px;padding:10px 12px}
-textarea{min-height:60px;resize:vertical}
+textarea{min-height:70px;resize:vertical}
 .row{display:flex;gap:10px}.row>*{flex:1;min-width:0}
 .timebox{display:flex;gap:6px}.timebox input{flex:1;min-width:0}
 .row.times{flex-direction:column;gap:0}
 @media (min-width:520px){.row.times{flex-direction:row;gap:10px}}
-button{font:inherit;border:0;border-radius:10px;padding:10px 14px;cursor:pointer;background:var(--accent-2);color:var(--accent);font-weight:600}
+button,a.btn{font:inherit;border:0;border-radius:10px;padding:10px 14px;cursor:pointer;background:var(--accent-2);color:var(--accent);
+  font-weight:600;text-decoration:none;display:inline-block;text-align:center}
 button.primary{background:var(--accent);color:#fff}
-button.big{width:100%;padding:16px;font-size:18px;margin-top:6px}
+button.big{width:100%;padding:15px;font-size:17px;margin-top:8px}
 button.danger{background:transparent;color:var(--danger);border:1px solid var(--danger)}
-button.small{padding:6px 10px;font-size:14px}
+button.small,a.btn.small{padding:6px 10px;font-size:14px}
 .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .visit{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--line)}
-.visit:first-child{border-top:0}
+.visit.first{border-top:0}
 .visit .who{font-weight:600}
 .visit .meta{font-size:14px;color:var(--muted)}
+.gap{font-size:13px;color:var(--muted);padding:6px 10px;margin:0 0 4px 6px;border-left:3px dashed var(--line);
+     display:flex;justify-content:space-between;align-items:center;gap:8px}
+.gap.ok{color:var(--accent);border-left-color:var(--accent)}
 .open{color:var(--warn);font-weight:600}
 .total{display:flex;justify-content:space-between;font-weight:700;margin-top:10px;padding-top:10px;border-top:2px solid var(--line)}
 .muted{color:var(--muted);font-size:14px}
@@ -59,19 +65,30 @@ tr.daytotal td{font-weight:700;background:var(--accent-2)}
 .tablewrap{overflow-x:auto}
 nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:flex;
     padding-bottom:env(safe-area-inset-bottom)}
-nav button{flex:1;background:none;color:var(--muted);border-radius:0;padding:12px 4px;font-size:14px}
+nav button{flex:1;background:none;color:var(--muted);border-radius:0;padding:10px 2px;font-size:13px}
 nav button.active{color:var(--accent)}
 nav button span{display:block;font-size:20px;line-height:1.1}
 .hidden{display:none!important}
-.check{display:flex;align-items:center;gap:8px;margin-top:10px}
-.check input{width:auto}
+.check{display:flex;align-items:flex-start;gap:10px;margin-top:12px;font-size:15px}
+.check input{width:22px;height:22px;flex:none;margin-top:1px}
+.check label{margin:0;color:var(--text);font-size:15px}
 .note{background:var(--accent-2);border-radius:10px;padding:10px 12px;font-size:14px}
+.info{font-size:14px;white-space:pre-wrap;margin:2px 0 8px}
+.infolabel{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-top:8px}
 #toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--text);color:var(--bg);
-  padding:10px 16px;border-radius:20px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none}
+  padding:10px 16px;border-radius:20px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:20}
 #toast.show{opacity:1}
 #installCard{border-color:var(--accent)}
+/* zámok */
+#zamok{max-width:420px;margin:0 auto;padding:28px 16px}
+#zamok .card{text-align:center}
+#zamok input{text-align:center;font-size:24px;letter-spacing:.3em;margin-top:6px}
+#zamok .lock{font-size:44px;line-height:1;margin:4px 0 8px}
+#pinChyba{color:var(--danger);font-size:14px;min-height:20px;margin-top:8px}
+body.locked main, body.locked nav, body.locked #zamknutBtn{display:none!important}
+body:not(.locked) #zamok{display:none}
 @media print{
-  header,nav,.noprint,#toast{display:none!important}
+  header,nav,.noprint,#toast,#zamok{display:none!important}
   body{background:#fff;color:#000;padding:0}
   .card{border:0;padding:0}
   #printHead{display:block!important}
@@ -79,11 +96,33 @@ nav button span{display:block;font-size:20px;line-height:1.1}
 }
 </style>
 </head>
-<body>
+<body class="locked">
 <header>
-  <h1>Pomocník opatrovateľky</h1>
-  <p>Dochádzka a hodiny – údaje zostávajú len vo vašom telefóne</p>
+  <div>
+    <h1>Pomocník opatrovateľky</h1>
+    <p>Údaje zostávajú len vo vašom telefóne</p>
+  </div>
+  <button id="zamknutBtn" title="Zamknúť">🔒</button>
 </header>
+
+<!-- ============ ZÁMOK ============ -->
+<section id="zamok">
+  <div class="card">
+    <div class="lock">🔒</div>
+    <h2 id="zNadpis">Zadajte PIN</h2>
+    <p class="muted" id="zText"></p>
+    <form id="zForm" autocomplete="off">
+      <input type="password" id="pin1" inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="PIN" aria-label="PIN">
+      <input type="password" id="pin2" inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="zopakujte PIN" aria-label="Zopakujte PIN" class="hidden">
+      <div id="pinChyba"></div>
+      <button class="primary big" id="zBtn" type="submit">Odomknúť</button>
+    </form>
+    <div class="btns" style="justify-content:center">
+      <button class="small" id="zabudlaBtn" type="button">Zabudla som PIN</button>
+      <button class="small" id="zObnovBtn" type="button">Obnoviť zo zálohy</button>
+    </div>
+  </div>
+</section>
 
 <main>
 <!-- ============ ZÁZNAM ============ -->
@@ -95,12 +134,8 @@ nav button span{display:block;font-size:20px;line-height:1.1}
   </div>
 
   <div class="card">
-    <div class="row">
-      <div>
-        <label for="den">Deň</label>
-        <input type="date" id="den">
-      </div>
-    </div>
+    <label for="den" style="margin-top:0">Deň</label>
+    <input type="date" id="den">
     <div id="quick"></div>
   </div>
 
@@ -112,8 +147,8 @@ nav button span{display:block;font-size:20px;line-height:1.1}
 
   <div class="card noprint">
     <h2 id="formNadpis">Pridať návštevu</h2>
-    <label for="klient">Klient (stačia iniciály)</label>
-    <input id="klient" list="klientiList" autocomplete="off" placeholder="napr. p. M. K.">
+    <label for="klient">Klient</label>
+    <input id="klient" list="klientiList" autocomplete="off" placeholder="meno alebo iniciály">
     <datalist id="klientiList"></datalist>
     <div class="row times">
       <div>
@@ -125,8 +160,7 @@ nav button span{display:block;font-size:20px;line-height:1.1}
         <div class="timebox"><input type="time" id="odchod"><button class="small" data-now="odchod">Teraz</button></div>
       </div>
     </div>
-    <label for="presun">Presun k ďalšiemu klientovi (minúty, započíta sa)</label>
-    <input type="number" id="presun" min="0" step="1" inputmode="numeric" placeholder="0">
+    <div class="check"><input type="checkbox" id="dalej"><label for="dalej">Po odchode idem priamo k ďalšiemu klientovi – <b>presun sa započíta</b></label></div>
     <label for="poznamka">Poznámka</label>
     <textarea id="poznamka" placeholder="čo sa robilo, nákup, lieky…"></textarea>
     <div class="btns">
@@ -136,12 +170,56 @@ nav button span{display:block;font-size:20px;line-height:1.1}
   </div>
 </section>
 
+<!-- ============ KLIENTI ============ -->
+<section id="tab-klienti" class="hidden">
+  <div class="card" id="klientiCard">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <h2 style="margin:0">Moji klienti</h2>
+      <button class="primary small" id="novyKlient">+ Nový klient</button>
+    </div>
+    <div id="klientiZoznam" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card hidden" id="kartaView">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <h2 style="margin:0" id="kvMeno"></h2>
+      <button class="small" id="kvZavriet">✕</button>
+    </div>
+    <div class="btns" id="kvAkcie"></div>
+    <div id="kvObsah"></div>
+    <div class="btns"><button class="primary" id="kvUpravit">Upraviť</button></div>
+  </div>
+
+  <div class="card hidden" id="kartaForm">
+    <h2 id="kfNadpis">Nový klient</h2>
+    <label for="kMeno">Meno (alebo iniciály)</label>
+    <input id="kMeno" autocomplete="off">
+    <label for="kAdresa">Adresa</label>
+    <input id="kAdresa" autocomplete="off" placeholder="ulica, číslo, mesto">
+    <label for="kTelefon">Telefón klienta</label>
+    <input id="kTelefon" type="tel" autocomplete="off">
+    <label for="kRodina">Kontakt na rodinu</label>
+    <textarea id="kRodina" placeholder="napr. dcéra Jana – 0905 123 456"></textarea>
+    <label for="kLieky">Lieky (názov, dávka, kedy)</label>
+    <textarea id="kLieky" placeholder="napr. Prestarium 5 mg – ráno 1 tbl."></textarea>
+    <label for="kAnamneza">Anamnéza / diagnózy</label>
+    <textarea id="kAnamneza"></textarea>
+    <label for="kPoznamky">Poznámky (alergie, kľúče, zvyky, čo treba robiť…)</label>
+    <textarea id="kPoznamky"></textarea>
+    <div class="btns">
+      <button class="primary" id="kUlozit">Uložiť</button>
+      <button id="kZrusit">Zrušiť</button>
+      <button class="danger hidden" id="kZmazat">Zmazať klienta</button>
+    </div>
+  </div>
+</section>
+
 <!-- ============ MESIAC ============ -->
 <section id="tab-mesiac" class="hidden">
   <div class="card noprint">
-    <label for="mesiac">Mesiac</label>
+    <label for="mesiac" style="margin-top:0">Mesiac</label>
     <input type="month" id="mesiac">
-    <div class="check"><input type="checkbox" id="anonym" checked><label for="anonym" style="margin:0;color:var(--text)">Namiesto mien písať Klient 1, 2, 3</label></div>
+    <div class="check"><input type="checkbox" id="anonym" checked><label for="anonym">Namiesto mien písať Klient 1, 2, 3</label></div>
     <div class="btns">
       <button class="primary" id="tlac">Tlač / uložiť PDF</button>
       <button id="csv">Stiahnuť pre Excel</button>
@@ -164,43 +242,42 @@ nav button span{display:block;font-size:20px;line-height:1.1}
     <input id="zamestnavatel" placeholder="napr. názov organizácie">
   </div>
   <div class="card">
+    <h2>PIN kód</h2>
+    <p class="muted">Appka sa zamkne sama, keď ju na 5 minút odložíte. Zamknúť ju môžete aj hneď ikonou 🔒 hore.</p>
+    <label for="novyPin1">Nový PIN (aspoň 4 číslice, odporúčame 6)</label>
+    <input type="password" id="novyPin1" inputmode="numeric" maxlength="8" autocomplete="off">
+    <label for="novyPin2">Zopakujte nový PIN</label>
+    <input type="password" id="novyPin2" inputmode="numeric" maxlength="8" autocomplete="off">
+    <div class="btns"><button class="primary" id="zmenitPin">Zmeniť PIN</button></div>
+  </div>
+  <div class="card">
     <h2>Záloha</h2>
-    <p class="muted">Údaje sú uložené iba v tomto telefóne. Raz za čas si stiahnite zálohu, napríklad pred výmenou telefónu.</p>
+    <p class="muted">Záloha je zašifrovaná. Pri obnove budete potrebovať PIN, ktorý ste mali pri jej stiahnutí. Zálohu si stiahnite raz za čas, hlavne pred výmenou telefónu.</p>
     <div class="btns">
       <button class="primary" id="zaloha">Stiahnuť zálohu</button>
       <button id="obnovBtn">Obnoviť zo zálohy</button>
-      <input type="file" id="obnovFile" accept=".json,application/json" class="hidden">
     </div>
   </div>
   <div class="card">
     <h2>Súkromie</h2>
-    <div class="note">Appka nič neposiela na internet. Mená klientov a časy vidíte len vy. Odporúčame písať klientov len iniciálami.</div>
+    <div class="note">Appka nič neposiela na internet. Na internete je len prázdna appka – vaše návštevy a karty klientov sú uložené iba v tomto telefóne a zašifrované vaším PIN kódom. Bez PINu ich nikto neprečíta, ani keď mu požičiate telefón.</div>
     <div class="btns"><button class="danger" id="zmazat">Zmazať všetky údaje</button></div>
   </div>
-  <p class="muted" style="text-align:center">Pomocník opatrovateľky · verzia 1.0</p>
+  <p class="muted" style="text-align:center">Pomocník opatrovateľky · verzia 2.0</p>
 </section>
 </main>
 
 <nav>
   <button data-tab="zaznam" class="active"><span>🕒</span>Záznam</button>
+  <button data-tab="klienti"><span>👵</span>Klienti</button>
   <button data-tab="mesiac"><span>📅</span>Mesiac</button>
   <button data-tab="nastavenia"><span>⚙️</span>Nastavenia</button>
 </nav>
+<input type="file" id="obnovFile" accept=".json,application/json" class="hidden">
 <div id="toast"></div>
 
 <script>
-/* ---------- úložisko ---------- */
-const KEY = 'pomocnik-opatrovatelky-v1';
-let data = { navstevy: [], meno: '', zamestnavatel: '' };
-let pamatOk = true;
-try { const s = localStorage.getItem(KEY); if (s) data = Object.assign(data, JSON.parse(s)); }
-catch(e){ pamatOk = false; }
-function uloz(){
-  try { localStorage.setItem(KEY, JSON.stringify(data)); }
-  catch(e){ if (pamatOk) toast('Pozor: údaje sa nedajú uložiť v tomto prehliadači'); pamatOk = false; }
-}
-
-/* ---------- pomocné ---------- */
+/* ================= pomocné ================= */
 const $ = id => document.getElementById(id);
 const pad = n => String(n).padStart(2,'0');
 const dnes = () => { const d=new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; };
@@ -210,65 +287,194 @@ const hm = m => `${Math.floor(m/60)}:${pad(m%60)}`;
 const DNI = ['nedeľa','pondelok','utorok','streda','štvrtok','piatok','sobota'];
 const MES = ['január','február','marec','apríl','máj','jún','júl','august','september','október','november','december'];
 function datumText(iso){ const [y,m,d]=iso.split('-').map(Number); const dt=new Date(y,m-1,d); return `${DNI[dt.getDay()]} ${d}. ${m}. ${y}`; }
-function trvanie(v){ // minúty návštevy + presun; cez polnoc sa pripočíta 24 h
-  if (!v.prichod || !v.odchod) return 0;
-  let m = min(v.odchod) - min(v.prichod); if (m < 0) m += 1440;
-  return m + (Number(v.presun)||0);
-}
 const esc = s => String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function toast(t){ const el=$('toast'); el.textContent=t; el.classList.add('show'); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),2200); }
-const id = () => Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function toast(t){ const el=$('toast'); el.textContent=t; el.classList.add('show'); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),2400); }
+const novyId = () => Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const podla = (a,b) => (a.prichod||'99:99').localeCompare(b.prichod||'99:99');
+function stiahni(text, nazov, typ){
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text],{type:typ}));
+  a.download = nazov; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},500);
+}
 
-/* ---------- záložky ---------- */
-document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
-  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('active', x===b));
-  ['zaznam','mesiac','nastavenia'].forEach(t => $('tab-'+t).classList.toggle('hidden', t!==b.dataset.tab));
-  if (b.dataset.tab==='mesiac') kresliMesiac();
-  scrollTo(0,0);
+/* ================= úložisko so šifrovaním ================= */
+const KEY = 'pomocnik-opatrovatelky-v2', OLD = 'pomocnik-opatrovatelky-v1';
+const prazdne = () => ({ verzia:2, navstevy:[], klienti:[], meno:'', zamestnavatel:'' });
+let data = prazdne(), kluc = null, salt = null;
+function citaj(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+function pis(k,v){ try { localStorage.setItem(k,v); return true; } catch(e){ return false; } }
+function zmaz(k){ try { localStorage.removeItem(k); } catch(e){} }
+function b64(buf){ const u=new Uint8Array(buf); let s=''; for(let i=0;i<u.length;i+=8192) s+=String.fromCharCode.apply(null,u.subarray(i,i+8192)); return btoa(s); }
+const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+
+async function odvodKluc(pin, sol){
+  const zaklad = await crypto.subtle.importKey('raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name:'PBKDF2', salt:sol, iterations:250000, hash:'SHA-256' },
+    zaklad, { name:'AES-GCM', length:256 }, false, ['encrypt','decrypt']);
+}
+async function zasifruj(){
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name:'AES-GCM', iv }, kluc, new TextEncoder().encode(JSON.stringify(data)));
+  return JSON.stringify({ app:'pomocnik-opatrovatelky', v:2, salt:b64(salt), iv:b64(iv), ct:b64(ct) });
+}
+let tUloz = null;
+function uloz(){ clearTimeout(tUloz); tUloz = setTimeout(ulozHned, 250); }
+async function ulozHned(){
+  clearTimeout(tUloz); if (!kluc) return;
+  const s = await zasifruj();
+  if (!pis(KEY, s)) toast('Pozor: údaje sa nepodarilo uložiť');
+}
+function migruj(stare){
+  const d = prazdne();
+  d.meno = stare.meno||''; d.zamestnavatel = stare.zamestnavatel||'';
+  d.navstevy = (stare.navstevy||[]).map(v => { const n = { ...v, dalej: Number(v.presun) > 0 }; delete n.presun; return n; });
+  d.klienti = stare.klienti||[];
+  return d;
+}
+
+/* ================= zámok ================= */
+let rezim = 'odomkni';
+function ukazZamok(){
+  document.body.classList.add('locked');
+  const maData = !!citaj(KEY);
+  rezim = maData ? 'odomkni' : 'novy';
+  $('pin1').value=''; $('pin2').value=''; $('pinChyba').textContent='';
+  $('pin2').classList.toggle('hidden', rezim==='odomkni');
+  $('zabudlaBtn').classList.toggle('hidden', rezim!=='odomkni');
+  $('zNadpis').textContent = rezim==='odomkni' ? 'Zadajte PIN' : 'Vytvorte si PIN';
+  $('zText').textContent = rezim==='odomkni'
+    ? 'Appka je zamknutá, aby údaje o klientoch nikto nevidel.'
+    : 'PIN chráni vaše údaje o klientoch. Zapamätajte si ho dobre – bez neho sa údaje nedajú otvoriť ani obnoviť.';
+  $('zBtn').textContent = rezim==='odomkni' ? 'Odomknúť' : 'Uložiť PIN a začať';
+  if (!window.crypto || !crypto.subtle){
+    $('zText').textContent = 'Appku otvorte cez internetovú adresu začínajúcu https://, inak sa nedá zamknúť.';
+    $('zForm').classList.add('hidden');
+  }
+  setTimeout(()=>$('pin1').focus(), 50);
+}
+$('zForm').onsubmit = async e => {
+  e.preventDefault();
+  const p1 = $('pin1').value.trim(), chyba = $('pinChyba');
+  if (!/^\d{4,8}$/.test(p1)){ chyba.textContent = 'PIN musí mať 4 až 8 číslic.'; return; }
+  $('zBtn').disabled = true; chyba.textContent = '';
+  try {
+    if (rezim === 'novy'){
+      if (p1 !== $('pin2').value.trim()){ chyba.textContent = 'PIN kódy sa nezhodujú.'; return; }
+      salt = crypto.getRandomValues(new Uint8Array(16));
+      kluc = await odvodKluc(p1, salt);
+      const stare = citaj(OLD);
+      data = prazdne();
+      if (stare){ try { data = migruj(JSON.parse(stare)); } catch(e){} }
+      await ulozHned();
+      if (stare && citaj(KEY)) zmaz(OLD);
+      odomknute();
+    } else {
+      const st = JSON.parse(citaj(KEY));
+      const sol = unb64(st.salt), k = await odvodKluc(p1, sol);
+      try {
+        const pt = await crypto.subtle.decrypt({ name:'AES-GCM', iv:unb64(st.iv) }, k, unb64(st.ct));
+        data = Object.assign(prazdne(), JSON.parse(new TextDecoder().decode(pt)));
+        kluc = k; salt = sol; odomknute();
+      } catch(err){ chyba.textContent = 'Nesprávny PIN.'; $('pin1').value=''; $('pin1').focus(); }
+    }
+  } finally { $('zBtn').disabled = false; }
+};
+$('zabudlaBtn').onclick = () => {
+  if (!confirm('Bez PINu sa údaje nedajú otvoriť – sú zašifrované.\n\nChcete všetko zmazať a začať odznova? (Ak máte zálohu, potom ju obnovíte s PINom, ktorý ste mali pri jej stiahnutí.)')) return;
+  zmaz(KEY); zmaz(OLD); ukazZamok(); toast('Údaje zmazané, vytvorte si nový PIN');
+};
+async function zamkni(){
+  await ulozHned(); kluc = null; data = prazdne();
+  ['zoznam','klientiZoznam','kvObsah','mesTab'].forEach(i => $(i).innerHTML='');
+  ukazZamok();
+}
+$('zamknutBtn').onclick = zamkni;
+let skrytaOd = 0;
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden'){ skrytaOd = Date.now(); ulozHned(); }
+  else if (kluc && skrytaOd && Date.now() - skrytaOd > 5*60*1000) zamkni();
 });
+function odomknute(){
+  document.body.classList.remove('locked');
+  $('meno').value = data.meno; $('zamestnavatel').value = data.zamestnavatel;
+  $('den').value = dnes(); $('mesiac').value = dnes().slice(0,7);
+  vycistiFormular(); zavriKartu(); klientiDatalist(); kresliDen(); kresliKlientov(); prepni('zaznam');
+}
 
-/* ---------- záznam dňa ---------- */
+/* ================= záložky ================= */
+function prepni(tab){
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('active', x.dataset.tab===tab));
+  ['zaznam','klienti','mesiac','nastavenia'].forEach(t => $('tab-'+t).classList.toggle('hidden', t!==tab));
+  if (tab==='mesiac') kresliMesiac();
+  scrollTo(0,0);
+}
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => prepni(b.dataset.tab));
+
+/* ================= výpočty ================= */
+function praca(v){ if (!v.prichod || !v.odchod) return 0; let m = min(v.odchod)-min(v.prichod); if (m<0) m+=1440; return m; }
+function medzera(a,b){ if (!a.odchod || !b || !b.prichod) return 0; const m = min(b.prichod)-min(a.odchod); return m>0 ? m : 0; }
+function presun(zoz,i){ const v=zoz[i]; return v.dalej ? medzera(v, zoz[i+1]) : 0; }
+function navstevyDna(d){ return data.navstevy.filter(v => v.datum===d).sort(podla); }
+function spoluDen(zoz){ return zoz.reduce((s,v,i) => s + praca(v) + presun(zoz,i), 0); }
+const kartaPodlaMena = m => data.klienti.find(k => k.meno.trim().toLowerCase() === String(m||'').trim().toLowerCase());
+
+/* ================= deň ================= */
 let upravujem = null;
-$('den').value = dnes();
 $('den').onchange = kresliDen;
 
-function navstevyDna(d){ return data.navstevy.filter(v => v.datum===d).sort(podla); }
-
 function kresliDen(){
+  if (!kluc) return;
   const d = $('den').value || dnes();
   const zoz = navstevyDna(d);
   $('denNadpis').textContent = 'Návštevy – ' + datumText(d);
-  $('zoznam').innerHTML = zoz.length ? zoz.map(v => `
-    <div class="visit">
+  $('zoznam').innerHTML = zoz.length ? zoz.map((v,i) => {
+    const karta = kartaPodlaMena(v.klient);
+    let h = `
+    <div class="visit${i===0?' first':''}">
       <div>
         <div class="who">${esc(v.klient)||'Klient'}</div>
-        <div class="meta">${v.prichod||'–'} – ${v.odchod ? v.odchod : '<span class="open">prebieha</span>'}${Number(v.presun)?` · presun ${v.presun} min`:''}${v.odchod?` · <b>${hm(trvanie(v))}</b>`:''}</div>
+        <div class="meta">${v.prichod||'–'} – ${v.odchod ? v.odchod : '<span class="open">prebieha</span>'}${v.odchod?` · <b>${hm(praca(v))}</b>`:''}</div>
         ${v.poznamka?`<div class="meta">${esc(v.poznamka)}</div>`:''}
       </div>
-      <div style="display:flex;gap:6px">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+        ${karta?`<button class="small" data-karta="${karta.id}">Karta</button>`:''}
         <button class="small" data-edit="${v.id}">Upraviť</button>
         <button class="small danger" data-del="${v.id}">✕</button>
       </div>
-    </div>`).join('') : '<p class="muted">Zatiaľ žiadna návšteva.</p>';
-  $('denSpolu').textContent = hm(zoz.reduce((s,v)=>s+trvanie(v),0));
+    </div>`;
+    const dalsi = zoz[i+1];
+    if (dalsi && v.odchod && dalsi.prichod){
+      const g = medzera(v, dalsi);
+      h += v.dalej
+        ? `<div class="gap ok"><span>🚌 presun ${hm(g)} – <b>ráta sa</b></span><button class="small" data-dalej="${v.id}">Nerátať</button></div>`
+        : `<div class="gap"><span>⏸ voľno ${hm(g)} – neráta sa</span><button class="small" data-dalej="${v.id}">Rátať ako presun</button></div>`;
+    } else if (v.dalej && v.odchod && !dalsi){
+      h += `<div class="gap ok"><span>🚌 presun k ďalšiemu klientovi – dopočíta sa po príchode</span></div>`;
+    }
+    return h;
+  }).join('') : '<p class="muted">Zatiaľ žiadna návšteva.</p>';
+  $('denSpolu').textContent = hm(spoluDen(zoz));
 
-  // rýchle tlačidlá pre dnešok
   const q = $('quick');
   if (d === dnes()){
     const otvorena = zoz.find(v => !v.odchod);
     q.innerHTML = otvorena
-      ? `<button class="primary big" id="qOdchod">Odchádzam od ${esc(otvorena.klient)||'klienta'} (${teraz()})</button>`
+      ? `<p class="muted" style="margin:12px 0 0">U klienta <b>${esc(otvorena.klient)||'–'}</b> od ${otvorena.prichod}</p>
+         <button class="primary big" id="qDalej">Odchádzam → idem k ďalšiemu klientovi</button>
+         <button class="big" id="qKoniec">Odchádzam → končím / mám voľno</button>`
       : `<label for="qKlient">Rýchly príchod ku klientovi</label>
-         <input id="qKlient" list="klientiList" placeholder="iniciály klienta">
+         <input id="qKlient" list="klientiList" placeholder="meno klienta" autocomplete="off">
          <button class="primary big" id="qPrichod">Prišla som (${teraz()})</button>`;
-    if (otvorena) $('qOdchod').onclick = () => {
-      otvorena.odchod = teraz(); uloz(); kresliDen(); toast('Odchod zapísaný');
-    };
-    else $('qPrichod').onclick = () => {
-      data.navstevy.push({ id:id(), datum:d, klient:$('qKlient').value.trim(), prichod:teraz(), odchod:'', presun:0, poznamka:'' });
-      uloz(); kresliDen(); klienti(); toast('Príchod zapísaný');
-    };
+    if (otvorena){
+      const odchod = dalej => { otvorena.odchod = teraz(); otvorena.dalej = dalej; uloz(); kresliDen();
+        toast(dalej ? 'Odchod zapísaný – presun sa ráta' : 'Odchod zapísaný'); };
+      $('qDalej').onclick = () => odchod(true);
+      $('qKoniec').onclick = () => odchod(false);
+    } else {
+      $('qPrichod').onclick = () => {
+        data.navstevy.push({ id:novyId(), datum:d, klient:$('qKlient').value.trim(), prichod:teraz(), odchod:'', dalej:false, poznamka:'' });
+        uloz(); kresliDen(); klientiDatalist(); toast('Príchod zapísaný');
+      };
+    }
   } else q.innerHTML = '';
 
   document.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => zacniUpravu(b.dataset.edit));
@@ -276,57 +482,118 @@ function kresliDen(){
     if (!confirm('Zmazať túto návštevu?')) return;
     data.navstevy = data.navstevy.filter(v => v.id !== b.dataset.del); uloz(); kresliDen();
   });
+  document.querySelectorAll('[data-dalej]').forEach(b => b.onclick = () => {
+    const v = data.navstevy.find(x => x.id === b.dataset.dalej); v.dalej = !v.dalej; uloz(); kresliDen();
+  });
+  document.querySelectorAll('#zoznam [data-karta]').forEach(b => b.onclick = () => { prepni('klienti'); ukazKartu(b.dataset.karta); });
 }
 
-function klienti(){
-  const mena = [...new Set(data.navstevy.map(v=>v.klient).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'sk'));
+function klientiDatalist(){
+  const mena = [...new Set([...data.klienti.map(k=>k.meno), ...data.navstevy.map(v=>v.klient)].filter(Boolean))]
+    .sort((a,b)=>a.localeCompare(b,'sk'));
   $('klientiList').innerHTML = mena.map(m=>`<option value="${esc(m)}">`).join('');
 }
 
 document.querySelectorAll('[data-now]').forEach(b => b.onclick = () => { $(b.dataset.now).value = teraz(); });
 
 function vycistiFormular(){
-  ['klient','prichod','odchod','presun','poznamka'].forEach(f => $(f).value='');
+  ['klient','prichod','odchod','poznamka'].forEach(f => $(f).value=''); $('dalej').checked = false;
   upravujem = null; $('formNadpis').textContent='Pridať návštevu'; $('zrusit').classList.add('hidden');
 }
 function zacniUpravu(vid){
   const v = data.navstevy.find(x=>x.id===vid); if (!v) return;
   upravujem = vid;
   $('klient').value=v.klient; $('prichod').value=v.prichod; $('odchod').value=v.odchod;
-  $('presun').value=v.presun||''; $('poznamka').value=v.poznamka||'';
+  $('dalej').checked=!!v.dalej; $('poznamka').value=v.poznamka||'';
   $('formNadpis').textContent='Upraviť návštevu'; $('zrusit').classList.remove('hidden');
   $('formNadpis').scrollIntoView({behavior:'smooth'});
 }
 $('zrusit').onclick = vycistiFormular;
 $('ulozit').onclick = () => {
   const v = { klient:$('klient').value.trim(), prichod:$('prichod').value, odchod:$('odchod').value,
-              presun:Math.max(0, parseInt($('presun').value)||0), poznamka:$('poznamka').value.trim() };
+              dalej:$('dalej').checked, poznamka:$('poznamka').value.trim() };
   if (!v.prichod){ toast('Vyplňte čas príchodu'); return; }
   if (upravujem){ Object.assign(data.navstevy.find(x=>x.id===upravujem), v); toast('Zmeny uložené'); }
-  else { data.navstevy.push(Object.assign({ id:id(), datum:$('den').value||dnes() }, v)); toast('Návšteva uložená'); }
-  uloz(); vycistiFormular(); kresliDen(); klienti();
+  else { data.navstevy.push(Object.assign({ id:novyId(), datum:$('den').value||dnes() }, v)); toast('Návšteva uložená'); }
+  uloz(); vycistiFormular(); kresliDen(); klientiDatalist();
 };
 
-/* ---------- mesiac ---------- */
-$('mesiac').value = dnes().slice(0,7);
-$('mesiac').onchange = kresliMesiac; $('anonym').onchange = kresliMesiac;
+/* ================= klienti ================= */
+let kartaId = null;
+const telHref = t => 'tel:' + String(t||'').replace(/[^\d+]/g,'');
+const mapaHref = a => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(a);
 
+function kresliKlientov(){
+  const zoz = [...data.klienti].sort((a,b)=>a.meno.localeCompare(b.meno,'sk'));
+  $('klientiZoznam').innerHTML = zoz.length ? zoz.map((k,i) => `
+    <div class="visit${i===0?' first':''}">
+      <div><div class="who">${esc(k.meno)}</div><div class="meta">${esc(k.adresa||'')}</div></div>
+      <div style="display:flex;gap:6px">
+        ${k.telefon?`<a class="btn small" href="${esc(telHref(k.telefon))}" title="Zavolať">📞</a>`:''}
+        <button class="small" data-karta="${k.id}">Otvoriť</button>
+      </div>
+    </div>`).join('') : '<p class="muted">Zatiaľ žiadny klient. Pridajte prvého tlačidlom „+ Nový klient“.</p>';
+  document.querySelectorAll('#klientiZoznam [data-karta]').forEach(b => b.onclick = () => ukazKartu(b.dataset.karta));
+}
+function zavriKartu(){ kartaId=null; $('kartaView').classList.add('hidden'); $('kartaForm').classList.add('hidden'); $('klientiCard').classList.remove('hidden'); }
+function ukazKartu(id){
+  const k = data.klienti.find(x=>x.id===id); if (!k) return;
+  kartaId = id;
+  $('klientiCard').classList.add('hidden'); $('kartaForm').classList.add('hidden'); $('kartaView').classList.remove('hidden');
+  $('kvMeno').textContent = k.meno;
+  $('kvAkcie').innerHTML = (k.telefon?`<a class="btn" href="${esc(telHref(k.telefon))}">📞 Zavolať</a>`:'')
+    + (k.adresa?`<a class="btn" href="${esc(mapaHref(k.adresa))}" target="_blank" rel="noopener">📍 Mapa</a>`:'');
+  const pole = [['Adresa',k.adresa],['Telefón',k.telefon],['Kontakt na rodinu',k.rodina],['Lieky',k.lieky],['Anamnéza / diagnózy',k.anamneza],['Poznámky',k.poznamky]];
+  $('kvObsah').innerHTML = pole.filter(p=>p[1]).map(p=>`<div class="infolabel">${p[0]}</div><div class="info">${esc(p[1])}</div>`).join('')
+    || '<p class="muted">Karta je zatiaľ prázdna.</p>';
+  scrollTo(0,0);
+}
+function upravKartu(id){
+  const k = id ? data.klienti.find(x=>x.id===id) : null;
+  kartaId = k ? k.id : null;
+  $('klientiCard').classList.add('hidden'); $('kartaView').classList.add('hidden'); $('kartaForm').classList.remove('hidden');
+  $('kfNadpis').textContent = k ? 'Upraviť klienta' : 'Nový klient';
+  $('kMeno').value=k?.meno||''; $('kAdresa').value=k?.adresa||''; $('kTelefon').value=k?.telefon||'';
+  $('kRodina').value=k?.rodina||''; $('kLieky').value=k?.lieky||''; $('kAnamneza').value=k?.anamneza||''; $('kPoznamky').value=k?.poznamky||'';
+  $('kZmazat').classList.toggle('hidden', !k);
+  scrollTo(0,0); $('kMeno').focus();
+}
+$('novyKlient').onclick = () => upravKartu(null);
+$('kvZavriet').onclick = zavriKartu;
+$('kvUpravit').onclick = () => upravKartu(kartaId);
+$('kZrusit').onclick = () => kartaId ? ukazKartu(kartaId) : zavriKartu();
+$('kUlozit').onclick = () => {
+  const k = { meno:$('kMeno').value.trim(), adresa:$('kAdresa').value.trim(), telefon:$('kTelefon').value.trim(),
+              rodina:$('kRodina').value.trim(), lieky:$('kLieky').value.trim(), anamneza:$('kAnamneza').value.trim(), poznamky:$('kPoznamky').value.trim() };
+  if (!k.meno){ toast('Vyplňte meno klienta'); return; }
+  if (kartaId) Object.assign(data.klienti.find(x=>x.id===kartaId), k);
+  else { k.id = novyId(); data.klienti.push(k); kartaId = k.id; }
+  uloz(); kresliKlientov(); klientiDatalist(); ukazKartu(kartaId); toast('Klient uložený');
+};
+$('kZmazat').onclick = () => {
+  if (!confirm('Zmazať kartu klienta? Návštevy v dochádzke zostanú.')) return;
+  data.klienti = data.klienti.filter(x=>x.id!==kartaId); uloz(); kresliKlientov(); klientiDatalist(); zavriKartu();
+};
+
+/* ================= mesiac ================= */
+$('mesiac').onchange = kresliMesiac; $('anonym').onchange = kresliMesiac;
 function mesacneRiadky(){
   const m = $('mesiac').value; const anon = $('anonym').checked;
   const dni = [...new Set(data.navstevy.filter(v=>v.datum.startsWith(m)).map(v=>v.datum))].sort();
   return dni.map(d => {
     const zoz = navstevyDna(d);
-    return { datum:d, navstevy: zoz.map((v,i)=>({...v, meno: anon ? `Klient ${i+1}` : (v.klient||`Klient ${i+1}`), min:trvanie(v)})),
-             spolu: zoz.reduce((s,v)=>s+trvanie(v),0) };
+    return { datum:d, spolu:spoluDen(zoz),
+      navstevy: zoz.map((v,i)=>({ ...v, meno: anon ? `Klient ${i+1}` : (v.klient||`Klient ${i+1}`), praca:praca(v), presun:presun(zoz,i) })) };
   });
 }
 function kresliMesiac(){
+  if (!kluc) return;
   const r = mesacneRiadky();
   const [y,mm] = $('mesiac').value.split('-').map(Number);
-  let html = '<tr><th>Deň</th><th>Klient</th><th>Príchod</th><th>Odchod</th><th class="num">Presun</th><th class="num">Spolu</th></tr>';
+  let html = '<tr><th>Deň</th><th>Klient</th><th>Príchod</th><th>Odchod</th><th class="num">Práca</th><th class="num">Presun</th></tr>';
   r.forEach(d => {
     d.navstevy.forEach((v,i) => {
-      html += `<tr><td>${i===0?datumText(d.datum).replace(/ \d{4}$/,''):''}</td><td>${esc(v.meno)}</td><td>${v.prichod||''}</td><td>${v.odchod||'<span class="open">?</span>'}</td><td class="num">${Number(v.presun)?v.presun+' min':''}</td><td class="num">${v.odchod?hm(v.min):''}</td></tr>`;
+      html += `<tr><td>${i===0?datumText(d.datum).replace(/ \d{4}$/,''):''}</td><td>${esc(v.meno)}</td><td>${v.prichod||''}</td><td>${v.odchod||'<span class="open">?</span>'}</td><td class="num">${v.odchod?hm(v.praca):''}</td><td class="num">${v.presun?hm(v.presun):''}</td></tr>`;
     });
     html += `<tr class="daytotal"><td colspan="5">Spolu za deň</td><td class="num">${hm(d.spolu)}</td></tr>`;
   });
@@ -335,46 +602,52 @@ function kresliMesiac(){
   $('mesDni').textContent = `Pracovných dní: ${r.length}`;
   $('mesSpolu').textContent = 'Spolu ' + hm(spolu) + ' h';
   $('printHead').innerHTML = `<h2>Výkaz odpracovaného času – ${MES[mm-1]} ${y}</h2>
-    <div>${esc(data.meno)||''}${data.zamestnavatel?' · '+esc(data.zamestnavatel):''}</div>`;
+    <div>${esc(data.meno)}${data.zamestnavatel?' · '+esc(data.zamestnavatel):''}</div>`;
 }
 $('tlac').onclick = () => { kresliMesiac(); window.print(); };
 $('csv').onclick = () => {
   const r = mesacneRiadky(); const s = ';';
-  let out = ['Dátum','Klient','Príchod','Odchod','Presun (min)','Spolu (h:mm)','Poznámka'].join(s)+'\r\n';
   const q = x => `"${String(x??'').replace(/"/g,'""')}"`;
-  r.forEach(d => { d.navstevy.forEach(v => out += [d.datum, q(v.meno), v.prichod, v.odchod, v.presun||0, v.odchod?hm(v.min):'', q(v.poznamka)].join(s)+'\r\n');
-                   out += [d.datum,q('Spolu za deň'),'','','',hm(d.spolu),''].join(s)+'\r\n'; });
-  out += ['',q('SPOLU ZA MESIAC'),'','','',hm(r.reduce((a,d)=>a+d.spolu,0)),''].join(s)+'\r\n';
-  stiahni('\ufeff'+out, `vykaz-${$('mesiac').value}.csv`, 'text/csv;charset=utf-8');
+  let out = ['Dátum','Klient','Príchod','Odchod','Práca (h:mm)','Presun (h:mm)','Poznámka'].join(s)+'\r\n';
+  r.forEach(d => { d.navstevy.forEach(v => out += [d.datum, q(v.meno), v.prichod, v.odchod, v.odchod?hm(v.praca):'', v.presun?hm(v.presun):'', q(v.poznamka)].join(s)+'\r\n');
+                   out += [d.datum, q('Spolu za deň (práca + presun)'),'','', hm(d.spolu),'',''].join(s)+'\r\n'; });
+  out += ['', q('SPOLU ZA MESIAC'),'','', hm(r.reduce((a,d)=>a+d.spolu,0)),'',''].join(s)+'\r\n';
+  stiahni('﻿'+out, `vykaz-${$('mesiac').value}.csv`, 'text/csv;charset=utf-8');
 };
-function stiahni(text, nazov, typ){
-  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text],{type:typ}));
-  a.download = nazov; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},500);
-}
 
-/* ---------- nastavenia ---------- */
-$('meno').value = data.meno; $('zamestnavatel').value = data.zamestnavatel;
+/* ================= nastavenia ================= */
 $('meno').oninput = e => { data.meno = e.target.value; uloz(); };
 $('zamestnavatel').oninput = e => { data.zamestnavatel = e.target.value; uloz(); };
-$('zaloha').onclick = () => stiahni(JSON.stringify(data,null,1), `zaloha-opatrovatelka-${dnes()}.json`, 'application/json');
-$('obnovBtn').onclick = () => $('obnovFile').click();
+$('zmenitPin').onclick = async () => {
+  const p1 = $('novyPin1').value.trim(), p2 = $('novyPin2').value.trim();
+  if (!/^\d{4,8}$/.test(p1)){ toast('PIN musí mať 4 až 8 číslic'); return; }
+  if (p1 !== p2){ toast('PIN kódy sa nezhodujú'); return; }
+  salt = crypto.getRandomValues(new Uint8Array(16)); kluc = await odvodKluc(p1, salt); await ulozHned();
+  $('novyPin1').value=''; $('novyPin2').value=''; toast('PIN zmenený');
+};
+$('zaloha').onclick = async () => { await ulozHned(); stiahni(citaj(KEY), `zaloha-opatrovatelka-${dnes()}.json`, 'application/json'); };
+$('obnovBtn').onclick = $('zObnovBtn').onclick = () => $('obnovFile').click();
 $('obnovFile').onchange = e => {
-  const f = e.target.files[0]; if (!f) return;
-  f.text().then(t => {
-    const d = JSON.parse(t); if (!Array.isArray(d.navstevy)) throw 0;
-    if (!confirm('Nahradiť súčasné údaje zálohou?')) return;
-    data = Object.assign({ navstevy:[], meno:'', zamestnavatel:'' }, d); uloz(); location.reload();
+  const f = e.target.files[0]; e.target.value=''; if (!f) return;
+  f.text().then(async t => {
+    const d = JSON.parse(t);
+    if (d.app === 'pomocnik-opatrovatelky' && d.ct){
+      if (!confirm('Nahradiť súčasné údaje zálohou? Potom zadajte PIN, ktorý ste mali pri stiahnutí zálohy.')) return;
+      kluc = null; data = prazdne(); pis(KEY, t); ukazZamok(); toast('Záloha nahratá – zadajte jej PIN');
+    } else if (Array.isArray(d.navstevy)){ // stará nezašifrovaná záloha (verzia 1)
+      if (!kluc){ toast('Najprv odomknite appku, potom obnovte starú zálohu'); return; }
+      if (!confirm('Nahradiť súčasné údaje touto staršou zálohou?')) return;
+      data = migruj(d); await ulozHned(); odomknute(); toast('Záloha obnovená');
+    } else throw 0;
   }).catch(() => toast('Tento súbor nie je platná záloha'));
 };
 $('zmazat').onclick = () => {
-  if (!confirm('Naozaj zmazať všetky návštevy a nastavenia? Toto sa nedá vrátiť.')) return;
-  data = { navstevy:[], meno:'', zamestnavatel:'' }; uloz(); location.reload();
+  if (!confirm('Naozaj zmazať všetky návštevy, klientov a PIN? Toto sa nedá vrátiť.')) return;
+  zmaz(KEY); zmaz(OLD); kluc=null; data=prazdne(); ukazZamok();
 };
 
-/* ---------- inštalácia (PWA) ---------- */
-if ('serviceWorker' in navigator && location.protocol === 'https:') {
-  navigator.serviceWorker.register('sw.js').catch(()=>{});
-}
+/* ================= inštalácia (PWA) ================= */
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
 let instEvent = null;
 const nainstalovana = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); instEvent = e; if(!nainstalovana) $('installCard').classList.remove('hidden'); });
@@ -384,8 +657,9 @@ if (!nainstalovana && /iphone|ipad/i.test(navigator.userAgent)) {
   $('installText').textContent = 'Na iPhone: ťuknite na ikonu Zdieľať (štvorček so šípkou) a vyberte „Pridať na plochu“.';
 }
 
-klienti(); kresliDen();
-setInterval(() => { if ($('den').value===dnes() && document.visibilityState==='visible') kresliDen(); }, 60000);
+ukazZamok();
+setInterval(() => { if (kluc && $('den').value===dnes() && document.visibilityState==='visible' && !$('tab-zaznam').classList.contains('hidden')
+  && !document.activeElement?.matches('input,textarea')) kresliDen(); }, 60000);
 </script>
 </body>
 </html>
