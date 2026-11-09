@@ -55,6 +55,12 @@ button.small,a.btn.small{padding:6px 10px;font-size:14px}
      display:flex;justify-content:space-between;align-items:center;gap:8px}
 .gap.ok{color:var(--accent);border-left-color:var(--accent)}
 .open{color:var(--warn);font-weight:600}
+.seg{display:flex;gap:6px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:4px}
+.seg button{flex:1;background:none;color:var(--muted);padding:9px 6px;font-size:15px}
+.seg button.on{background:var(--accent);color:#fff}
+.visit.lekar .who{color:#5b6bb5}
+@media (prefers-color-scheme: dark){.visit.lekar .who{color:#a3b0ff}}
+.rozpis{font-size:13px;color:var(--muted);text-align:right;margin-top:4px}
 .total{display:flex;justify-content:space-between;font-weight:700;margin-top:10px;padding-top:10px;border-top:2px solid var(--line)}
 .muted{color:var(--muted);font-size:14px}
 table{width:100%;border-collapse:collapse;font-size:14px}
@@ -143,11 +149,16 @@ body:not(.locked) #zamok{display:none}
     <h2 id="denNadpis">Návštevy</h2>
     <div id="zoznam"></div>
     <div class="total"><span>Odpracované spolu</span><span id="denSpolu">0:00</span></div>
+    <div class="rozpis" id="denRozpis"></div>
   </div>
 
   <div class="card noprint">
     <h2 id="formNadpis">Pridať návštevu</h2>
-    <label for="klient">Klient</label>
+    <div class="seg" id="typSeg">
+      <button data-typ="klient" class="on">👵 Klient</button>
+      <button data-typ="lekar">🩺 Lekár – priepustka</button>
+    </div>
+    <label for="klient" id="klientLabel">Klient</label>
     <input id="klient" list="klientiList" autocomplete="off" placeholder="meno alebo iniciály">
     <datalist id="klientiList"></datalist>
     <div class="row times">
@@ -160,7 +171,7 @@ body:not(.locked) #zamok{display:none}
         <div class="timebox"><input type="time" id="odchod"><button class="small" data-now="odchod">Teraz</button></div>
       </div>
     </div>
-    <div class="check"><input type="checkbox" id="dalej"><label for="dalej">Po odchode idem priamo k ďalšiemu klientovi – <b>presun sa započíta</b></label></div>
+    <div class="check" id="dalejBox"><input type="checkbox" id="dalej"><label for="dalej">Po odchode idem priamo k ďalšiemu klientovi – <b>presun sa započíta</b></label></div>
     <label for="poznamka">Poznámka</label>
     <textarea id="poznamka" placeholder="čo sa robilo, nákup, lieky…"></textarea>
     <div class="btns">
@@ -228,7 +239,26 @@ body:not(.locked) #zamok{display:none}
   <div class="card">
     <div id="printHead" class="hidden" style="margin-bottom:10px"></div>
     <div class="tablewrap"><table id="mesTab"></table></div>
-    <div class="total"><span id="mesDni"></span><span id="mesSpolu">0:00</span></div>
+    <div id="mesSuhrn"></div>
+    <div id="mesAbs"></div>
+  </div>
+  <div class="card noprint">
+    <h2 id="absNadpis">Dovolenka a PN</h2>
+    <div class="seg" id="absSeg">
+      <button data-abs="dovolenka" class="on">🌴 Dovolenka</button>
+      <button data-abs="pn">🤒 PN</button>
+    </div>
+    <div class="row">
+      <div><label for="absOd">Od</label><input type="date" id="absOd"></div>
+      <div><label for="absDo">Do</label><input type="date" id="absDo"></div>
+    </div>
+    <label for="absPozn">Poznámka (nepovinné)</label>
+    <input id="absPozn" autocomplete="off">
+    <div class="btns">
+      <button class="primary" id="absUlozit">Uložiť</button>
+      <button id="absZrusit" class="hidden">Zrušiť úpravu</button>
+    </div>
+    <div id="absZoznam" style="margin-top:12px"></div>
   </div>
 </section>
 
@@ -263,7 +293,7 @@ body:not(.locked) #zamok{display:none}
     <div class="note">Appka nič neposiela na internet. Na internete je len prázdna appka – vaše návštevy a karty klientov sú uložené iba v tomto telefóne a zašifrované vaším PIN kódom. Bez PINu ich nikto neprečíta, ani keď mu požičiate telefón.</div>
     <div class="btns"><button class="danger" id="zmazat">Zmazať všetky údaje</button></div>
   </div>
-  <p class="muted" style="text-align:center">Pomocník opatrovateľky · verzia 2.0</p>
+  <p class="muted" style="text-align:center">Pomocník opatrovateľky · verzia 2.1</p>
 </section>
 </main>
 
@@ -298,7 +328,7 @@ function stiahni(text, nazov, typ){
 
 /* ================= úložisko so šifrovaním ================= */
 const KEY = 'pomocnik-opatrovatelky-v2', OLD = 'pomocnik-opatrovatelky-v1';
-const prazdne = () => ({ verzia:2, navstevy:[], klienti:[], meno:'', zamestnavatel:'' });
+const prazdne = () => ({ verzia:2, navstevy:[], klienti:[], absencie:[], meno:'', zamestnavatel:'' });
 let data = prazdne(), kluc = null, salt = null;
 function citaj(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
 function pis(k,v){ try { localStorage.setItem(k,v); return true; } catch(e){ return false; } }
@@ -327,7 +357,7 @@ function migruj(stare){
   const d = prazdne();
   d.meno = stare.meno||''; d.zamestnavatel = stare.zamestnavatel||'';
   d.navstevy = (stare.navstevy||[]).map(v => { const n = { ...v, dalej: Number(v.presun) > 0 }; delete n.presun; return n; });
-  d.klienti = stare.klienti||[];
+  d.klienti = stare.klienti||[]; d.absencie = stare.absencie||[];
   return d;
 }
 
@@ -412,9 +442,18 @@ document.querySelectorAll('nav button').forEach(b => b.onclick = () => prepni(b.
 /* ================= výpočty ================= */
 function praca(v){ if (!v.prichod || !v.odchod) return 0; let m = min(v.odchod)-min(v.prichod); if (m<0) m+=1440; return m; }
 function medzera(a,b){ if (!a.odchod || !b || !b.prichod) return 0; const m = min(b.prichod)-min(a.odchod); return m>0 ? m : 0; }
-function presun(zoz,i){ const v=zoz[i]; return v.dalej ? medzera(v, zoz[i+1]) : 0; }
+const jeLekar = v => v.typ === 'lekar';
+function presun(zoz,i){ const v=zoz[i]; return (v.dalej && !jeLekar(v)) ? medzera(v, zoz[i+1]) : 0; }
 function navstevyDna(d){ return data.navstevy.filter(v => v.datum===d).sort(podla); }
-function spoluDen(zoz){ return zoz.reduce((s,v,i) => s + praca(v) + presun(zoz,i), 0); }
+function sucty(zoz){
+  const s = { pr:0, ps:0, le:0 };
+  zoz.forEach((v,i) => { if (jeLekar(v)) s.le += praca(v); else { s.pr += praca(v); s.ps += presun(zoz,i); } });
+  s.spolu = s.pr + s.ps + s.le; return s;
+}
+function rozpisText(s){
+  const c = [`práca ${hm(s.pr)}`]; if (s.ps) c.push(`presuny ${hm(s.ps)}`); if (s.le) c.push(`lekár ${hm(s.le)}`);
+  return (s.ps || s.le) ? c.join(' · ') : '';
+}
 const kartaPodlaMena = m => data.klienti.find(k => k.meno.trim().toLowerCase() === String(m||'').trim().toLowerCase());
 
 /* ================= deň ================= */
@@ -426,12 +465,15 @@ function kresliDen(){
   const d = $('den').value || dnes();
   const zoz = navstevyDna(d);
   $('denNadpis').textContent = 'Návštevy – ' + datumText(d);
-  $('zoznam').innerHTML = zoz.length ? zoz.map((v,i) => {
-    const karta = kartaPodlaMena(v.klient);
+  const absDna = data.absencie.filter(a => a.od <= d && d <= a.do);
+  const absHtml = absDna.map(a => `<div class="note" style="margin-bottom:8px">${ABS[a.typ]} ${fmtD(a.od)} – ${fmtD(a.do)}${a.poznamka?' · '+esc(a.poznamka):''}</div>`).join('');
+  $('zoznam').innerHTML = absHtml + (zoz.length ? zoz.map((v,i) => {
+    const lek = jeLekar(v);
+    const karta = lek ? null : kartaPodlaMena(v.klient);
     let h = `
-    <div class="visit${i===0?' first':''}">
+    <div class="visit${i===0?' first':''}${lek?' lekar':''}">
       <div>
-        <div class="who">${esc(v.klient)||'Klient'}</div>
+        <div class="who">${lek ? '🩺 Lekár – priepustka' + (v.klient?' · '+esc(v.klient):'') : (esc(v.klient)||'Klient')}</div>
         <div class="meta">${v.prichod||'–'} – ${v.odchod ? v.odchod : '<span class="open">prebieha</span>'}${v.odchod?` · <b>${hm(praca(v))}</b>`:''}</div>
         ${v.poznamka?`<div class="meta">${esc(v.poznamka)}</div>`:''}
       </div>
@@ -442,7 +484,8 @@ function kresliDen(){
       </div>
     </div>`;
     const dalsi = zoz[i+1];
-    if (dalsi && v.odchod && dalsi.prichod){
+    if (lek) { /* od lekára sa presun neráta – priepustka platí od do */ }
+    else if (dalsi && v.odchod && dalsi.prichod){
       const g = medzera(v, dalsi);
       h += v.dalej
         ? `<div class="gap ok"><span>🚌 presun ${hm(g)} – <b>ráta sa</b></span><button class="small" data-dalej="${v.id}">Nerátať</button></div>`
@@ -451,20 +494,28 @@ function kresliDen(){
       h += `<div class="gap ok"><span>🚌 presun k ďalšiemu klientovi – dopočíta sa po príchode</span></div>`;
     }
     return h;
-  }).join('') : '<p class="muted">Zatiaľ žiadna návšteva.</p>';
-  $('denSpolu').textContent = hm(spoluDen(zoz));
+  }).join('') : (absDna.length ? '' : '<p class="muted">Zatiaľ žiadna návšteva.</p>'));
+  const s = sucty(zoz);
+  $('denSpolu').textContent = hm(s.spolu);
+  $('denRozpis').textContent = rozpisText(s);
 
   const q = $('quick');
   if (d === dnes()){
     const otvorena = zoz.find(v => !v.odchod);
-    q.innerHTML = otvorena
+    q.innerHTML = otvorena && jeLekar(otvorena)
+      ? `<p class="muted" style="margin:12px 0 0">🩺 U lekára (priepustka) od ${otvorena.prichod}</p>
+         <button class="primary big" id="qLekarSpat">Vrátila som sa od lekára</button>`
+      : otvorena
       ? `<p class="muted" style="margin:12px 0 0">U klienta <b>${esc(otvorena.klient)||'–'}</b> od ${otvorena.prichod}</p>
          <button class="primary big" id="qDalej">Odchádzam → idem k ďalšiemu klientovi</button>
          <button class="big" id="qKoniec">Odchádzam → končím / mám voľno</button>`
       : `<label for="qKlient">Rýchly príchod ku klientovi</label>
          <input id="qKlient" list="klientiList" placeholder="meno klienta" autocomplete="off">
-         <button class="primary big" id="qPrichod">Prišla som (${teraz()})</button>`;
-    if (otvorena){
+         <button class="primary big" id="qPrichod">Prišla som (${teraz()})</button>
+         <button class="big" id="qLekar">🩺 Idem k lekárovi (priepustka)</button>`;
+    if (otvorena && jeLekar(otvorena)){
+      $('qLekarSpat').onclick = () => { otvorena.odchod = teraz(); uloz(); kresliDen(); toast('Návrat od lekára zapísaný'); };
+    } else if (otvorena){
       const odchod = dalej => { otvorena.odchod = teraz(); otvorena.dalej = dalej; uloz(); kresliDen();
         toast(dalej ? 'Odchod zapísaný – presun sa ráta' : 'Odchod zapísaný'); };
       $('qDalej').onclick = () => odchod(true);
@@ -473,6 +524,10 @@ function kresliDen(){
       $('qPrichod').onclick = () => {
         data.navstevy.push({ id:novyId(), datum:d, klient:$('qKlient').value.trim(), prichod:teraz(), odchod:'', dalej:false, poznamka:'' });
         uloz(); kresliDen(); klientiDatalist(); toast('Príchod zapísaný');
+      };
+      $('qLekar').onclick = () => {
+        data.navstevy.push({ id:novyId(), datum:d, typ:'lekar', klient:'', prichod:teraz(), odchod:'', dalej:false, poznamka:'' });
+        uloz(); kresliDen(); toast('Odchod k lekárovi zapísaný');
       };
     }
   } else q.innerHTML = '';
@@ -496,25 +551,38 @@ function klientiDatalist(){
 
 document.querySelectorAll('[data-now]').forEach(b => b.onclick = () => { $(b.dataset.now).value = teraz(); });
 
+let formTyp = 'klient';
+function nastavTyp(t){
+  formTyp = t;
+  document.querySelectorAll('#typSeg button').forEach(b => b.classList.toggle('on', b.dataset.typ===t));
+  const lek = t === 'lekar';
+  $('klientLabel').textContent = lek ? 'Lekár / ambulancia (nepovinné)' : 'Klient';
+  $('klient').placeholder = lek ? 'napr. obvodný lekár, zubár' : 'meno alebo iniciály';
+  document.querySelector('label[for=prichod]').textContent = lek ? 'Od' : 'Príchod';
+  document.querySelector('label[for=odchod]').textContent = lek ? 'Do' : 'Odchod';
+  $('dalejBox').classList.toggle('hidden', lek);
+}
+document.querySelectorAll('#typSeg button').forEach(b => b.onclick = () => nastavTyp(b.dataset.typ));
 function vycistiFormular(){
   ['klient','prichod','odchod','poznamka'].forEach(f => $(f).value=''); $('dalej').checked = false;
-  upravujem = null; $('formNadpis').textContent='Pridať návštevu'; $('zrusit').classList.add('hidden');
+  upravujem = null; $('formNadpis').textContent='Pridať záznam'; $('zrusit').classList.add('hidden'); nastavTyp('klient');
 }
 function zacniUpravu(vid){
   const v = data.navstevy.find(x=>x.id===vid); if (!v) return;
-  upravujem = vid;
+  upravujem = vid; nastavTyp(jeLekar(v) ? 'lekar' : 'klient');
   $('klient').value=v.klient; $('prichod').value=v.prichod; $('odchod').value=v.odchod;
   $('dalej').checked=!!v.dalej; $('poznamka').value=v.poznamka||'';
-  $('formNadpis').textContent='Upraviť návštevu'; $('zrusit').classList.remove('hidden');
+  $('formNadpis').textContent='Upraviť záznam'; $('zrusit').classList.remove('hidden');
   $('formNadpis').scrollIntoView({behavior:'smooth'});
 }
 $('zrusit').onclick = vycistiFormular;
 $('ulozit').onclick = () => {
-  const v = { klient:$('klient').value.trim(), prichod:$('prichod').value, odchod:$('odchod').value,
-              dalej:$('dalej').checked, poznamka:$('poznamka').value.trim() };
-  if (!v.prichod){ toast('Vyplňte čas príchodu'); return; }
+  const lek = formTyp === 'lekar';
+  const v = { typ: lek ? 'lekar' : 'klient', klient:$('klient').value.trim(), prichod:$('prichod').value, odchod:$('odchod').value,
+              dalej: lek ? false : $('dalej').checked, poznamka:$('poznamka').value.trim() };
+  if (!v.prichod){ toast(lek ? 'Vyplňte čas od' : 'Vyplňte čas príchodu'); return; }
   if (upravujem){ Object.assign(data.navstevy.find(x=>x.id===upravujem), v); toast('Zmeny uložené'); }
-  else { data.navstevy.push(Object.assign({ id:novyId(), datum:$('den').value||dnes() }, v)); toast('Návšteva uložená'); }
+  else { data.navstevy.push(Object.assign({ id:novyId(), datum:$('den').value||dnes() }, v)); toast(lek ? 'Priepustka uložená' : 'Návšteva uložená'); }
   uloz(); vycistiFormular(); kresliDen(); klientiDatalist();
 };
 
@@ -581,37 +649,111 @@ function mesacneRiadky(){
   const m = $('mesiac').value; const anon = $('anonym').checked;
   const dni = [...new Set(data.navstevy.filter(v=>v.datum.startsWith(m)).map(v=>v.datum))].sort();
   return dni.map(d => {
-    const zoz = navstevyDna(d);
-    return { datum:d, spolu:spoluDen(zoz),
-      navstevy: zoz.map((v,i)=>({ ...v, meno: anon ? `Klient ${i+1}` : (v.klient||`Klient ${i+1}`), praca:praca(v), presun:presun(zoz,i) })) };
+    const zoz = navstevyDna(d); let n = 0;
+    return { datum:d, s:sucty(zoz), spolu:sucty(zoz).spolu,
+      navstevy: zoz.map((v,i) => {
+        const lek = jeLekar(v);
+        const meno = lek ? 'Lekár – priepustka' + (!anon && v.klient ? ' ('+v.klient+')' : '')
+                         : (anon ? `Klient ${++n}` : (v.klient || `Klient ${++n}`));
+        return { ...v, lek, meno, praca: lek ? 0 : praca(v), lekar: lek ? praca(v) : 0, presun: presun(zoz,i) };
+      }) };
   });
 }
 function kresliMesiac(){
   if (!kluc) return;
   const r = mesacneRiadky();
   const [y,mm] = $('mesiac').value.split('-').map(Number);
-  let html = '<tr><th>Deň</th><th>Klient</th><th>Príchod</th><th>Odchod</th><th class="num">Práca</th><th class="num">Presun</th></tr>';
+  let html = '<tr><th>Deň</th><th>Klient</th><th>Od</th><th>Do</th><th class="num">Práca</th><th class="num">Presun</th><th class="num">Lekár</th></tr>';
   r.forEach(d => {
     d.navstevy.forEach((v,i) => {
-      html += `<tr><td>${i===0?datumText(d.datum).replace(/ \d{4}$/,''):''}</td><td>${esc(v.meno)}</td><td>${v.prichod||''}</td><td>${v.odchod||'<span class="open">?</span>'}</td><td class="num">${v.odchod?hm(v.praca):''}</td><td class="num">${v.presun?hm(v.presun):''}</td></tr>`;
+      html += `<tr><td>${i===0?datumText(d.datum).replace(/ \d{4}$/,''):''}</td><td>${esc(v.meno)}</td><td>${v.prichod||''}</td><td>${v.odchod||'<span class="open">?</span>'}</td><td class="num">${v.praca?hm(v.praca):''}</td><td class="num">${v.presun?hm(v.presun):''}</td><td class="num">${v.lekar?hm(v.lekar):''}</td></tr>`;
     });
-    html += `<tr class="daytotal"><td colspan="5">Spolu za deň</td><td class="num">${hm(d.spolu)}</td></tr>`;
+    html += `<tr class="daytotal"><td colspan="6">Spolu za deň</td><td class="num">${hm(d.spolu)}</td></tr>`;
   });
   $('mesTab').innerHTML = r.length ? html : '<tr><td class="muted">V tomto mesiaci nie sú žiadne záznamy.</td></tr>';
-  const spolu = r.reduce((s,d)=>s+d.spolu,0);
-  $('mesDni').textContent = `Pracovných dní: ${r.length}`;
-  $('mesSpolu').textContent = 'Spolu ' + hm(spolu) + ' h';
+  const t = r.reduce((a,d)=>({ pr:a.pr+d.s.pr, ps:a.ps+d.s.ps, le:a.le+d.s.le, spolu:a.spolu+d.s.spolu }), {pr:0,ps:0,le:0,spolu:0});
+  const riadok = (a,b,bold) => `<div class="${bold?'total':''}" style="display:flex;justify-content:space-between;${bold?'':'font-size:14px;margin-top:6px'}"><span>${a}</span><span>${b}</span></div>`;
+  $('mesSuhrn').innerHTML = `<div style="margin-top:10px">`
+    + riadok('Pracovných dní', r.length)
+    + riadok('Práca u klientov', hm(t.pr)+' h')
+    + riadok('Presuny medzi klientmi', hm(t.ps)+' h')
+    + riadok('Lekár – priepustky', hm(t.le)+' h')
+    + riadok('Spolu', hm(t.spolu)+' h', true) + `</div>`;
+  // dovolenka a PN v tomto mesiaci
+  const mes = $('mesiac').value;
+  const abs = data.absencie.filter(a => a.od.slice(0,7) <= mes && mes <= a.do.slice(0,7)).sort((a,b)=>a.od.localeCompare(b.od));
+  if (abs.length){
+    let dov = 0, pn = 0;
+    const rows = abs.map(a => { const p = pocty(a.od, a.do, mes); if (a.typ==='dovolenka') dov += p.prac; else pn += p.kal;
+      return `<tr><td>${ABS[a.typ]}</td><td>${fmtD(a.od)} – ${fmtD(a.do)}</td><td class="num">${a.typ==='dovolenka' ? p.prac+' prac. dní' : p.kal+' kal. dní'}</td></tr>`; }).join('');
+    $('mesAbs').innerHTML = `<h2 style="margin-top:18px">Dovolenka a PN</h2><div class="tablewrap"><table>${rows}</table></div>`
+      + `<div style="margin-top:8px">${riadok('Dovolenka v tomto mesiaci', dov+' prac. dní (po–pi)')}${riadok('PN v tomto mesiaci', pn+' kalendárnych dní')}</div>`;
+  } else $('mesAbs').innerHTML = '';
+  kresliAbs();
   $('printHead').innerHTML = `<h2>Výkaz odpracovaného času – ${MES[mm-1]} ${y}</h2>
     <div>${esc(data.meno)}${data.zamestnavatel?' · '+esc(data.zamestnavatel):''}</div>`;
 }
 $('tlac').onclick = () => { kresliMesiac(); window.print(); };
+
+/* ================= dovolenka a PN ================= */
+const ABS = { dovolenka:'🌴 Dovolenka', pn:'🤒 PN' };
+const fmtD = iso => { const [y,m,d] = iso.split('-').map(Number); return `${d}. ${m}. ${y}`; };
+const isoD = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+function pocty(od, doD, mes){
+  const dni = []; const d = new Date(od+'T12:00'), e = new Date(doD+'T12:00');
+  while (d <= e){ if (!mes || isoD(d).startsWith(mes)) dni.push(new Date(d)); d.setDate(d.getDate()+1); }
+  return { kal: dni.length, prac: dni.filter(x => x.getDay()!==0 && x.getDay()!==6).length };
+}
+let absTyp = 'dovolenka', absUprav = null;
+function nastavAbs(t){ absTyp = t; document.querySelectorAll('#absSeg button').forEach(b => b.classList.toggle('on', b.dataset.abs===t)); }
+document.querySelectorAll('#absSeg button').forEach(b => b.onclick = () => nastavAbs(b.dataset.abs));
+function vycistiAbs(){ absUprav = null; $('absOd').value=''; $('absDo').value=''; $('absPozn').value=''; nastavAbs('dovolenka');
+  $('absZrusit').classList.add('hidden'); $('absNadpis').textContent='Dovolenka a PN'; }
+$('absZrusit').onclick = vycistiAbs;
+$('absOd').onchange = () => { if (!$('absDo').value || $('absDo').value < $('absOd').value) $('absDo').value = $('absOd').value; };
+$('absUlozit').onclick = () => {
+  const a = { typ:absTyp, od:$('absOd').value, do:$('absDo').value || $('absOd').value, poznamka:$('absPozn').value.trim() };
+  if (!a.od){ toast('Vyplňte dátum od'); return; }
+  if (a.do < a.od){ toast('Dátum do je skôr ako od'); return; }
+  if (pocty(a.od, a.do).kal > 400){ toast('Obdobie je príliš dlhé'); return; }
+  if (absUprav) Object.assign(data.absencie.find(x=>x.id===absUprav), a);
+  else { a.id = novyId(); data.absencie.push(a); }
+  uloz(); vycistiAbs(); kresliMesiac(); toast(a.typ==='pn' ? 'PN uložená' : 'Dovolenka uložená');
+};
+function kresliAbs(){
+  const zoz = [...data.absencie].sort((a,b)=>b.od.localeCompare(a.od));
+  $('absZoznam').innerHTML = zoz.length ? zoz.map((a,i) => { const p = pocty(a.od, a.do); return `
+    <div class="visit${i===0?' first':''}">
+      <div><div class="who">${ABS[a.typ]}</div>
+        <div class="meta">${fmtD(a.od)} – ${fmtD(a.do)} · ${a.typ==='dovolenka' ? p.prac+' prac. dní (po–pi)' : p.kal+' kal. dní'}</div>
+        ${a.poznamka?`<div class="meta">${esc(a.poznamka)}</div>`:''}</div>
+      <div style="display:flex;gap:6px"><button class="small" data-absedit="${a.id}">Upraviť</button><button class="small danger" data-absdel="${a.id}">✕</button></div>
+    </div>`; }).join('') : '<p class="muted">Zatiaľ žiadna dovolenka ani PN.</p>';
+  document.querySelectorAll('[data-absedit]').forEach(b => b.onclick = () => {
+    const a = data.absencie.find(x=>x.id===b.dataset.absedit); absUprav = a.id; nastavAbs(a.typ);
+    $('absOd').value=a.od; $('absDo').value=a.do; $('absPozn').value=a.poznamka||'';
+    $('absZrusit').classList.remove('hidden'); $('absNadpis').textContent = 'Upraviť – ' + ABS[a.typ];
+    $('absNadpis').scrollIntoView({behavior:'smooth'});
+  });
+  document.querySelectorAll('[data-absdel]').forEach(b => b.onclick = () => {
+    if (!confirm('Zmazať tento záznam?')) return;
+    data.absencie = data.absencie.filter(x=>x.id!==b.dataset.absdel); uloz(); kresliMesiac();
+  });
+}
 $('csv').onclick = () => {
   const r = mesacneRiadky(); const s = ';';
   const q = x => `"${String(x??'').replace(/"/g,'""')}"`;
-  let out = ['Dátum','Klient','Príchod','Odchod','Práca (h:mm)','Presun (h:mm)','Poznámka'].join(s)+'\r\n';
-  r.forEach(d => { d.navstevy.forEach(v => out += [d.datum, q(v.meno), v.prichod, v.odchod, v.odchod?hm(v.praca):'', v.presun?hm(v.presun):'', q(v.poznamka)].join(s)+'\r\n');
-                   out += [d.datum, q('Spolu za deň (práca + presun)'),'','', hm(d.spolu),'',''].join(s)+'\r\n'; });
-  out += ['', q('SPOLU ZA MESIAC'),'','', hm(r.reduce((a,d)=>a+d.spolu,0)),'',''].join(s)+'\r\n';
+  let out = ['Dátum','Klient','Od','Do','Práca (h:mm)','Presun (h:mm)','Lekár (h:mm)','Spolu (h:mm)','Poznámka'].join(s)+'\r\n';
+  const T = {pr:0,ps:0,le:0,spolu:0};
+  r.forEach(d => { d.navstevy.forEach(v => out += [d.datum, q(v.meno), v.prichod, v.odchod, v.praca?hm(v.praca):'', v.presun?hm(v.presun):'', v.lekar?hm(v.lekar):'', '', q(v.poznamka)].join(s)+'\r\n');
+                   out += [d.datum, q('Spolu za deň'),'','', hm(d.s.pr), hm(d.s.ps), hm(d.s.le), hm(d.s.spolu),''].join(s)+'\r\n';
+                   ['pr','ps','le','spolu'].forEach(k => T[k] += d.s[k]); });
+  out += ['', q('SPOLU ZA MESIAC'),'','', hm(T.pr), hm(T.ps), hm(T.le), hm(T.spolu),''].join(s)+'\r\n';
+  const mes = $('mesiac').value;
+  data.absencie.filter(a => a.od.slice(0,7) <= mes && mes <= a.do.slice(0,7)).sort((a,b)=>a.od.localeCompare(b.od)).forEach(a => {
+    const p = pocty(a.od, a.do, mes);
+    out += ['', q(a.typ==='pn'?'PN':'Dovolenka'), a.od, a.do, '', '', '', '', q(a.typ==='pn' ? p.kal+' kal. dní v mesiaci' : p.prac+' prac. dní v mesiaci')].join(s)+'\r\n';
+  });
   stiahni('﻿'+out, `vykaz-${$('mesiac').value}.csv`, 'text/csv;charset=utf-8');
 };
 
