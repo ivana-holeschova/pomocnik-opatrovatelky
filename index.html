@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pomocník opatrovateľky</title>
+<meta name="description" content="Jednoduchá dochádzka a prehľad hodín pre opatrovateľky. Údaje zostávajú len v telefóne.">
+<meta name="theme-color" content="#2f7d6d">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Opatrovateľka">
+<style>
+:root{
+  --bg:#f4f7f6; --card:#ffffff; --text:#1d2b28; --muted:#5d6f6b; --line:#dde6e3;
+  --accent:#2f7d6d; --accent-2:#e8f3f0; --danger:#b3403a; --warn:#c98a1b;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#121917; --card:#1b2422; --text:#e6efec; --muted:#9db0ab; --line:#2c3a37;
+         --accent:#5cbfa8; --accent-2:#1f312d; --danger:#e07a73; --warn:#e3b04e; }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+     padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+header{background:var(--accent);color:#fff;padding:14px 16px calc(14px) ;padding-top:calc(14px + env(safe-area-inset-top))}
+header h1{margin:0;font-size:19px;font-weight:650}
+header p{margin:2px 0 0;font-size:13px;opacity:.85}
+main{max-width:640px;margin:0 auto;padding:12px 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+h2{font-size:16px;margin:0 0 10px}
+label{display:block;font-size:13px;color:var(--muted);margin:8px 0 4px}
+input,select,textarea{width:100%;font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);
+  border-radius:10px;padding:10px 12px}
+textarea{min-height:60px;resize:vertical}
+.row{display:flex;gap:10px}.row>*{flex:1;min-width:0}
+.timebox{display:flex;gap:6px}.timebox input{flex:1;min-width:0}
+.row.times{flex-direction:column;gap:0}
+@media (min-width:520px){.row.times{flex-direction:row;gap:10px}}
+button{font:inherit;border:0;border-radius:10px;padding:10px 14px;cursor:pointer;background:var(--accent-2);color:var(--accent);font-weight:600}
+button.primary{background:var(--accent);color:#fff}
+button.big{width:100%;padding:16px;font-size:18px;margin-top:6px}
+button.danger{background:transparent;color:var(--danger);border:1px solid var(--danger)}
+button.small{padding:6px 10px;font-size:14px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.visit{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--line)}
+.visit:first-child{border-top:0}
+.visit .who{font-weight:600}
+.visit .meta{font-size:14px;color:var(--muted)}
+.open{color:var(--warn);font-weight:600}
+.total{display:flex;justify-content:space-between;font-weight:700;margin-top:10px;padding-top:10px;border-top:2px solid var(--line)}
+.muted{color:var(--muted);font-size:14px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600}
+td.num,th.num{text-align:right;white-space:nowrap}
+tr.daytotal td{font-weight:700;background:var(--accent-2)}
+.tablewrap{overflow-x:auto}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:flex;
+    padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;color:var(--muted);border-radius:0;padding:12px 4px;font-size:14px}
+nav button.active{color:var(--accent)}
+nav button span{display:block;font-size:20px;line-height:1.1}
+.hidden{display:none!important}
+.check{display:flex;align-items:center;gap:8px;margin-top:10px}
+.check input{width:auto}
+.note{background:var(--accent-2);border-radius:10px;padding:10px 12px;font-size:14px}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--text);color:var(--bg);
+  padding:10px 16px;border-radius:20px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none}
+#toast.show{opacity:1}
+#installCard{border-color:var(--accent)}
+@media print{
+  header,nav,.noprint,#toast{display:none!important}
+  body{background:#fff;color:#000;padding:0}
+  .card{border:0;padding:0}
+  #printHead{display:block!important}
+  tr.daytotal td{background:#eee}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Pomocník opatrovateľky</h1>
+  <p>Dochádzka a hodiny – údaje zostávajú len vo vašom telefóne</p>
+</header>
+
+<main>
+<!-- ============ ZÁZNAM ============ -->
+<section id="tab-zaznam">
+  <div class="card hidden" id="installCard">
+    <h2>Nainštalovať appku</h2>
+    <p class="muted" id="installText">Pridajte si appku na plochu telefónu, bude fungovať aj bez internetu.</p>
+    <button class="primary" id="installBtn">Pridať na plochu</button>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <div>
+        <label for="den">Deň</label>
+        <input type="date" id="den">
+      </div>
+    </div>
+    <div id="quick"></div>
+  </div>
+
+  <div class="card">
+    <h2 id="denNadpis">Návštevy</h2>
+    <div id="zoznam"></div>
+    <div class="total"><span>Odpracované spolu</span><span id="denSpolu">0:00</span></div>
+  </div>
+
+  <div class="card noprint">
+    <h2 id="formNadpis">Pridať návštevu</h2>
+    <label for="klient">Klient (stačia iniciály)</label>
+    <input id="klient" list="klientiList" autocomplete="off" placeholder="napr. p. M. K.">
+    <datalist id="klientiList"></datalist>
+    <div class="row times">
+      <div>
+        <label for="prichod">Príchod</label>
+        <div class="timebox"><input type="time" id="prichod"><button class="small" data-now="prichod">Teraz</button></div>
+      </div>
+      <div>
+        <label for="odchod">Odchod</label>
+        <div class="timebox"><input type="time" id="odchod"><button class="small" data-now="odchod">Teraz</button></div>
+      </div>
+    </div>
+    <label for="presun">Presun k ďalšiemu klientovi (minúty, započíta sa)</label>
+    <input type="number" id="presun" min="0" step="1" inputmode="numeric" placeholder="0">
+    <label for="poznamka">Poznámka</label>
+    <textarea id="poznamka" placeholder="čo sa robilo, nákup, lieky…"></textarea>
+    <div class="btns">
+      <button class="primary" id="ulozit">Uložiť</button>
+      <button id="zrusit" class="hidden">Zrušiť úpravu</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MESIAC ============ -->
+<section id="tab-mesiac" class="hidden">
+  <div class="card noprint">
+    <label for="mesiac">Mesiac</label>
+    <input type="month" id="mesiac">
+    <div class="check"><input type="checkbox" id="anonym" checked><label for="anonym" style="margin:0;color:var(--text)">Namiesto mien písať Klient 1, 2, 3</label></div>
+    <div class="btns">
+      <button class="primary" id="tlac">Tlač / uložiť PDF</button>
+      <button id="csv">Stiahnuť pre Excel</button>
+    </div>
+  </div>
+  <div class="card">
+    <div id="printHead" class="hidden" style="margin-bottom:10px"></div>
+    <div class="tablewrap"><table id="mesTab"></table></div>
+    <div class="total"><span id="mesDni"></span><span id="mesSpolu">0:00</span></div>
+  </div>
+</section>
+
+<!-- ============ NASTAVENIA ============ -->
+<section id="tab-nastavenia" class="hidden">
+  <div class="card">
+    <h2>O mne</h2>
+    <label for="meno">Moje meno (zobrazí sa na mesačnom výkaze)</label>
+    <input id="meno" placeholder="Meno a priezvisko">
+    <label for="zamestnavatel">Zamestnávateľ (nepovinné)</label>
+    <input id="zamestnavatel" placeholder="napr. názov organizácie">
+  </div>
+  <div class="card">
+    <h2>Záloha</h2>
+    <p class="muted">Údaje sú uložené iba v tomto telefóne. Raz za čas si stiahnite zálohu, napríklad pred výmenou telefónu.</p>
+    <div class="btns">
+      <button class="primary" id="zaloha">Stiahnuť zálohu</button>
+      <button id="obnovBtn">Obnoviť zo zálohy</button>
+      <input type="file" id="obnovFile" accept=".json,application/json" class="hidden">
+    </div>
+  </div>
+  <div class="card">
+    <h2>Súkromie</h2>
+    <div class="note">Appka nič neposiela na internet. Mená klientov a časy vidíte len vy. Odporúčame písať klientov len iniciálami.</div>
+    <div class="btns"><button class="danger" id="zmazat">Zmazať všetky údaje</button></div>
+  </div>
+  <p class="muted" style="text-align:center">Pomocník opatrovateľky · verzia 1.0</p>
+</section>
+</main>
+
+<nav>
+  <button data-tab="zaznam" class="active"><span>🕒</span>Záznam</button>
+  <button data-tab="mesiac"><span>📅</span>Mesiac</button>
+  <button data-tab="nastavenia"><span>⚙️</span>Nastavenia</button>
+</nav>
+<div id="toast"></div>
+
+<script>
+/* ---------- úložisko ---------- */
+const KEY = 'pomocnik-opatrovatelky-v1';
+let data = { navstevy: [], meno: '', zamestnavatel: '' };
+let pamatOk = true;
+try { const s = localStorage.getItem(KEY); if (s) data = Object.assign(data, JSON.parse(s)); }
+catch(e){ pamatOk = false; }
+function uloz(){
+  try { localStorage.setItem(KEY, JSON.stringify(data)); }
+  catch(e){ if (pamatOk) toast('Pozor: údaje sa nedajú uložiť v tomto prehliadači'); pamatOk = false; }
+}
+
+/* ---------- pomocné ---------- */
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2,'0');
+const dnes = () => { const d=new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; };
+const teraz = () => { const d=new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const min = t => { const [h,m]=t.split(':').map(Number); return h*60+m; };
+const hm = m => `${Math.floor(m/60)}:${pad(m%60)}`;
+const DNI = ['nedeľa','pondelok','utorok','streda','štvrtok','piatok','sobota'];
+const MES = ['január','február','marec','apríl','máj','jún','júl','august','september','október','november','december'];
+function datumText(iso){ const [y,m,d]=iso.split('-').map(Number); const dt=new Date(y,m-1,d); return `${DNI[dt.getDay()]} ${d}. ${m}. ${y}`; }
+function trvanie(v){ // minúty návštevy + presun; cez polnoc sa pripočíta 24 h
+  if (!v.prichod || !v.odchod) return 0;
+  let m = min(v.odchod) - min(v.prichod); if (m < 0) m += 1440;
+  return m + (Number(v.presun)||0);
+}
+const esc = s => String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(t){ const el=$('toast'); el.textContent=t; el.classList.add('show'); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),2200); }
+const id = () => Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const podla = (a,b) => (a.prichod||'99:99').localeCompare(b.prichod||'99:99');
+
+/* ---------- záložky ---------- */
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('active', x===b));
+  ['zaznam','mesiac','nastavenia'].forEach(t => $('tab-'+t).classList.toggle('hidden', t!==b.dataset.tab));
+  if (b.dataset.tab==='mesiac') kresliMesiac();
+  scrollTo(0,0);
+});
+
+/* ---------- záznam dňa ---------- */
+let upravujem = null;
+$('den').value = dnes();
+$('den').onchange = kresliDen;
+
+function navstevyDna(d){ return data.navstevy.filter(v => v.datum===d).sort(podla); }
+
+function kresliDen(){
+  const d = $('den').value || dnes();
+  const zoz = navstevyDna(d);
+  $('denNadpis').textContent = 'Návštevy – ' + datumText(d);
+  $('zoznam').innerHTML = zoz.length ? zoz.map(v => `
+    <div class="visit">
+      <div>
+        <div class="who">${esc(v.klient)||'Klient'}</div>
+        <div class="meta">${v.prichod||'–'} – ${v.odchod ? v.odchod : '<span class="open">prebieha</span>'}${Number(v.presun)?` · presun ${v.presun} min`:''}${v.odchod?` · <b>${hm(trvanie(v))}</b>`:''}</div>
+        ${v.poznamka?`<div class="meta">${esc(v.poznamka)}</div>`:''}
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="small" data-edit="${v.id}">Upraviť</button>
+        <button class="small danger" data-del="${v.id}">✕</button>
+      </div>
+    </div>`).join('') : '<p class="muted">Zatiaľ žiadna návšteva.</p>';
+  $('denSpolu').textContent = hm(zoz.reduce((s,v)=>s+trvanie(v),0));
+
+  // rýchle tlačidlá pre dnešok
+  const q = $('quick');
+  if (d === dnes()){
+    const otvorena = zoz.find(v => !v.odchod);
+    q.innerHTML = otvorena
+      ? `<button class="primary big" id="qOdchod">Odchádzam od ${esc(otvorena.klient)||'klienta'} (${teraz()})</button>`
+      : `<label for="qKlient">Rýchly príchod ku klientovi</label>
+         <input id="qKlient" list="klientiList" placeholder="iniciály klienta">
+         <button class="primary big" id="qPrichod">Prišla som (${teraz()})</button>`;
+    if (otvorena) $('qOdchod').onclick = () => {
+      otvorena.odchod = teraz(); uloz(); kresliDen(); toast('Odchod zapísaný');
+    };
+    else $('qPrichod').onclick = () => {
+      data.navstevy.push({ id:id(), datum:d, klient:$('qKlient').value.trim(), prichod:teraz(), odchod:'', presun:0, poznamka:'' });
+      uloz(); kresliDen(); klienti(); toast('Príchod zapísaný');
+    };
+  } else q.innerHTML = '';
+
+  document.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => zacniUpravu(b.dataset.edit));
+  document.querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
+    if (!confirm('Zmazať túto návštevu?')) return;
+    data.navstevy = data.navstevy.filter(v => v.id !== b.dataset.del); uloz(); kresliDen();
+  });
+}
+
+function klienti(){
+  const mena = [...new Set(data.navstevy.map(v=>v.klient).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'sk'));
+  $('klientiList').innerHTML = mena.map(m=>`<option value="${esc(m)}">`).join('');
+}
+
+document.querySelectorAll('[data-now]').forEach(b => b.onclick = () => { $(b.dataset.now).value = teraz(); });
+
+function vycistiFormular(){
+  ['klient','prichod','odchod','presun','poznamka'].forEach(f => $(f).value='');
+  upravujem = null; $('formNadpis').textContent='Pridať návštevu'; $('zrusit').classList.add('hidden');
+}
+function zacniUpravu(vid){
+  const v = data.navstevy.find(x=>x.id===vid); if (!v) return;
+  upravujem = vid;
+  $('klient').value=v.klient; $('prichod').value=v.prichod; $('odchod').value=v.odchod;
+  $('presun').value=v.presun||''; $('poznamka').value=v.poznamka||'';
+  $('formNadpis').textContent='Upraviť návštevu'; $('zrusit').classList.remove('hidden');
+  $('formNadpis').scrollIntoView({behavior:'smooth'});
+}
+$('zrusit').onclick = vycistiFormular;
+$('ulozit').onclick = () => {
+  const v = { klient:$('klient').value.trim(), prichod:$('prichod').value, odchod:$('odchod').value,
+              presun:Math.max(0, parseInt($('presun').value)||0), poznamka:$('poznamka').value.trim() };
+  if (!v.prichod){ toast('Vyplňte čas príchodu'); return; }
+  if (upravujem){ Object.assign(data.navstevy.find(x=>x.id===upravujem), v); toast('Zmeny uložené'); }
+  else { data.navstevy.push(Object.assign({ id:id(), datum:$('den').value||dnes() }, v)); toast('Návšteva uložená'); }
+  uloz(); vycistiFormular(); kresliDen(); klienti();
+};
+
+/* ---------- mesiac ---------- */
+$('mesiac').value = dnes().slice(0,7);
+$('mesiac').onchange = kresliMesiac; $('anonym').onchange = kresliMesiac;
+
+function mesacneRiadky(){
+  const m = $('mesiac').value; const anon = $('anonym').checked;
+  const dni = [...new Set(data.navstevy.filter(v=>v.datum.startsWith(m)).map(v=>v.datum))].sort();
+  return dni.map(d => {
+    const zoz = navstevyDna(d);
+    return { datum:d, navstevy: zoz.map((v,i)=>({...v, meno: anon ? `Klient ${i+1}` : (v.klient||`Klient ${i+1}`), min:trvanie(v)})),
+             spolu: zoz.reduce((s,v)=>s+trvanie(v),0) };
+  });
+}
+function kresliMesiac(){
+  const r = mesacneRiadky();
+  const [y,mm] = $('mesiac').value.split('-').map(Number);
+  let html = '<tr><th>Deň</th><th>Klient</th><th>Príchod</th><th>Odchod</th><th class="num">Presun</th><th class="num">Spolu</th></tr>';
+  r.forEach(d => {
+    d.navstevy.forEach((v,i) => {
+      html += `<tr><td>${i===0?datumText(d.datum).replace(/ \d{4}$/,''):''}</td><td>${esc(v.meno)}</td><td>${v.prichod||''}</td><td>${v.odchod||'<span class="open">?</span>'}</td><td class="num">${Number(v.presun)?v.presun+' min':''}</td><td class="num">${v.odchod?hm(v.min):''}</td></tr>`;
+    });
+    html += `<tr class="daytotal"><td colspan="5">Spolu za deň</td><td class="num">${hm(d.spolu)}</td></tr>`;
+  });
+  $('mesTab').innerHTML = r.length ? html : '<tr><td class="muted">V tomto mesiaci nie sú žiadne záznamy.</td></tr>';
+  const spolu = r.reduce((s,d)=>s+d.spolu,0);
+  $('mesDni').textContent = `Pracovných dní: ${r.length}`;
+  $('mesSpolu').textContent = 'Spolu ' + hm(spolu) + ' h';
+  $('printHead').innerHTML = `<h2>Výkaz odpracovaného času – ${MES[mm-1]} ${y}</h2>
+    <div>${esc(data.meno)||''}${data.zamestnavatel?' · '+esc(data.zamestnavatel):''}</div>`;
+}
+$('tlac').onclick = () => { kresliMesiac(); window.print(); };
+$('csv').onclick = () => {
+  const r = mesacneRiadky(); const s = ';';
+  let out = ['Dátum','Klient','Príchod','Odchod','Presun (min)','Spolu (h:mm)','Poznámka'].join(s)+'\r\n';
+  const q = x => `"${String(x??'').replace(/"/g,'""')}"`;
+  r.forEach(d => { d.navstevy.forEach(v => out += [d.datum, q(v.meno), v.prichod, v.odchod, v.presun||0, v.odchod?hm(v.min):'', q(v.poznamka)].join(s)+'\r\n');
+                   out += [d.datum,q('Spolu za deň'),'','','',hm(d.spolu),''].join(s)+'\r\n'; });
+  out += ['',q('SPOLU ZA MESIAC'),'','','',hm(r.reduce((a,d)=>a+d.spolu,0)),''].join(s)+'\r\n';
+  stiahni('\ufeff'+out, `vykaz-${$('mesiac').value}.csv`, 'text/csv;charset=utf-8');
+};
+function stiahni(text, nazov, typ){
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text],{type:typ}));
+  a.download = nazov; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},500);
+}
+
+/* ---------- nastavenia ---------- */
+$('meno').value = data.meno; $('zamestnavatel').value = data.zamestnavatel;
+$('meno').oninput = e => { data.meno = e.target.value; uloz(); };
+$('zamestnavatel').oninput = e => { data.zamestnavatel = e.target.value; uloz(); };
+$('zaloha').onclick = () => stiahni(JSON.stringify(data,null,1), `zaloha-opatrovatelka-${dnes()}.json`, 'application/json');
+$('obnovBtn').onclick = () => $('obnovFile').click();
+$('obnovFile').onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  f.text().then(t => {
+    const d = JSON.parse(t); if (!Array.isArray(d.navstevy)) throw 0;
+    if (!confirm('Nahradiť súčasné údaje zálohou?')) return;
+    data = Object.assign({ navstevy:[], meno:'', zamestnavatel:'' }, d); uloz(); location.reload();
+  }).catch(() => toast('Tento súbor nie je platná záloha'));
+};
+$('zmazat').onclick = () => {
+  if (!confirm('Naozaj zmazať všetky návštevy a nastavenia? Toto sa nedá vrátiť.')) return;
+  data = { navstevy:[], meno:'', zamestnavatel:'' }; uloz(); location.reload();
+};
+
+/* ---------- inštalácia (PWA) ---------- */
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+let instEvent = null;
+const nainstalovana = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); instEvent = e; if(!nainstalovana) $('installCard').classList.remove('hidden'); });
+$('installBtn').onclick = async () => { if (!instEvent) return; instEvent.prompt(); await instEvent.userChoice; instEvent=null; $('installCard').classList.add('hidden'); };
+if (!nainstalovana && /iphone|ipad/i.test(navigator.userAgent)) {
+  $('installCard').classList.remove('hidden'); $('installBtn').classList.add('hidden');
+  $('installText').textContent = 'Na iPhone: ťuknite na ikonu Zdieľať (štvorček so šípkou) a vyberte „Pridať na plochu“.';
+}
+
+klienti(); kresliDen();
+setInterval(() => { if ($('den').value===dnes() && document.visibilityState==='visible') kresliDen(); }, 60000);
+</script>
+</body>
+</html>
